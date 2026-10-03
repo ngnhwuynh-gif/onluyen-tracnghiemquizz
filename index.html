@@ -209,7 +209,7 @@
         const ACCOUNT_NAME = "NGUYEN NHU QUYNH"; 
 
         let currentUser = localStorage.getItem('quiz_user') || null;
-        let currentXu = parseInt(localStorage.getItem('quiz_xu')) || 0;
+        let currentXu = 0; // MẶC ĐỊNH LÀ 0 XU
         let allQuestions = [];
         let filteredQuestions = [];
         let currentQIndex = 0;
@@ -253,41 +253,36 @@
             const pass = document.getElementById('password').value.trim();
             if(!user || !pass) return alert("Vui lòng nhập đầy đủ thông tin!");
 
-            // Kiểm tra xem thiết bị này đã từng nhận Xu làm thử chưa
-            const isTrialClaimed = localStorage.getItem('quiz_device_claimed') ? 'true' : 'false';
+            document.body.style.cursor = 'wait';
 
-            fetch(API_URL + "?action=" + type + "&username=" + encodeURIComponent(user) + "&password=" + encodeURIComponent(pass) + "&isTrialClaimed=" + isTrialClaimed)
+            fetch(API_URL + "?action=" + type + "&username=" + encodeURIComponent(user) + "&password=" + encodeURIComponent(pass))
                 .then(res => res.json())
                 .then(res => {
+                    document.body.style.cursor = 'default';
                     if(type === 'login' && res.result === 'success') {
                         currentUser = user;
-                        currentXu = res.xu;
+                        currentXu = Number(res.xu) || 0; // LẤY XU THỰC TẾ TỪ GOOGLE SHEET
                         localStorage.setItem('quiz_user', user);
-                        localStorage.setItem('quiz_xu', res.xu);
+                        localStorage.setItem('quiz_xu', currentXu);
                         updateUserBar();
                         renderSubjects();
                         showScreen('subject-screen');
                     } else if(type === 'register' && res.result === 'success') {
-                        // Đánh dấu thiết bị này đã nhận lượt làm thử 1 lần
-                        localStorage.setItem('quiz_device_claimed', 'true');
-                        if (res.xu > 0) {
-                            alert("Đăng ký thành công! Bạn nhận được " + res.xu + " Xu làm thử miễn phí. Hãy bấm Đăng Nhập.");
-                        } else {
-                            alert("Đăng ký thành công! Thiết bị này đã hết lượt làm thử miễn phí. Vui lòng đăng nhập và nạp Xu để làm bài.");
-                        }
+                        alert("Đăng ký thành công! Tài khoản của bạn có 0 Xu. Vui lòng bấm 'Đăng nhập' để vào làm bài.");
                     } else if(res.result === 'exists') {
                         alert("Tài khoản này đã tồn tại!");
                     } else {
                         alert("Sai tên đăng nhập hoặc mật khẩu!");
                     }
                 })
-                .catch(err => alert("Lỗi kết nối máy chủ dữ liệu!"));
+                .catch(err => {
+                    document.body.style.cursor = 'default';
+                    alert("Lỗi kết nối máy chủ dữ liệu!");
+                });
         }
 
         function logout() {
-            // Chỉ xóa thông tin đăng nhập, KHÔNG xóa cờ quiz_device_claimed
-            localStorage.removeItem('quiz_user');
-            localStorage.removeItem('quiz_xu');
+            localStorage.clear();
             currentUser = null;
             currentXu = 0;
             updateUserBar();
@@ -373,10 +368,6 @@
                         updateUserBar();
                     }
                     startQuiz(bodeName);
-                } else if (res.status === "block" && res.reason === "no_xu") {
-                    document.getElementById('qr-content').innerText = "NAPXU " + currentUser;
-                    updateQR(10000); 
-                    showScreen('payment-screen');
                 } else {
                     document.getElementById('qr-content').innerText = "NAPXU " + currentUser;
                     updateQR(10000); 
@@ -455,9 +446,11 @@
             }
         };
 
+        // Nếu đã từng đăng nhập -> tự động đăng nhập lại và đồng bộ xu chuẩn từ Google Sheet
         if(currentUser) {
-            updateUserBar();
-            showScreen('subject-screen');
+            handleAuth('login');
+        } else {
+            showScreen('auth-screen');
         }
         loadAllQuestions();
     </script>
