@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ôn Tập Trắc Nghiệm</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -67,15 +68,6 @@
         .btn-success { background-color: var(--success-color); }
         .btn-success:hover { background-color: #27ae60; }
         
-        .auth-form input {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        
         .grid-list {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -137,13 +129,15 @@
     </div>
 
     <div class="container">
-        <!-- 1. MÀN HÌNH ĐĂNG NHẬP / ĐĂNG KÝ -->
-        <div id="auth-screen" class="card auth-form">
-            <h3 style="margin-top:0;">Đăng Nhập Hệ Thống Học Tập</h3>
-            <input type="text" id="username" placeholder="Tên đăng nhập hoặc Email">
-            <input type="password" id="password" placeholder="Mật khẩu">
-            <button class="btn" onclick="handleAuth('login')" style="margin-bottom: 10px;">Đăng nhập</button>
-            <button class="btn btn-success" onclick="handleAuth('register')">Đăng ký tài khoản mới</button>
+        <!-- 1. MÀN HÌNH ĐĂNG NHẬP BẰNG GOOGLE -->
+        <div id="auth-screen" class="card" style="text-align: center;">
+            <h3 style="margin-top:0;">Đăng Nhập Học Tập</h3>
+            <p style="color: #666; font-size: 14px;">Mỗi tài khoản Google sẽ nhận được <b>1 lần làm thử bài thi FREE</b>!</p>
+            
+            <div style="margin: 25px 0;">
+                <input type="email" id="google-email-input" placeholder="Nhập Email Google của bạn..." style="width: 80%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; margin-bottom: 15px;">
+                <button class="btn btn-success" onclick="loginWithGoogleEmail()" style="width: 80%;">Xác Nhận Đăng Nhập Google</button>
+            </div>
         </div>
 
         <!-- 2. MÀN HÌNH CHỌN MÔN HỌC -->
@@ -163,10 +157,9 @@
         <div id="payment-screen" class="card hidden">
             <button class="btn btn-danger" onclick="showScreen('bode-screen')" style="width: auto; padding: 5px 15px; margin-bottom: 15px;">← Quay lại</button>
             <div class="qr-box">
-                <h3 style="color: var(--accent-color); margin-top:0;">Hết Lượt Làm Thử Miễn Phí!</h3>
-                <p>Bộ đề này yêu cầu <b>5 xu</b> để làm bài. Vui lòng chọn gói nạp bên dưới:</p>
+                <h3 style="color: var(--accent-color); margin-top:0;">Bạn Đã Hết Lượt Làm Thử Free!</h3>
+                <p>Mỗi tài khoản Google chỉ có 1 lượt làm thử free. Vui lòng nạp xu để tiếp tục học:</p>
 
-                <!-- 3 NÚT CHỌN SỐ TIỀN DÀNH CHO KHÁCH -->
                 <div style="display: flex; gap: 10px; justify-content: center; margin: 15px 0; flex-wrap: wrap;">
                     <button class="btn" onclick="updateQR(10000)" style="width: auto; padding: 10px 15px; font-size: 14px;">Gói Lẻ: 10.000đ (5 Xu)</button>
                     <button class="btn btn-success" onclick="updateQR(50000)" style="width: auto; padding: 10px 15px; font-size: 14px;">Combo: 50.000đ (50 Xu)</button>
@@ -179,7 +172,6 @@
                 <p style="background: #fff; padding: 10px; border: 1px solid #ddd; font-weight: bold; color: #333;">
                     Nội dung CK bắt buộc: <span id="qr-content" style="color: blue;"></span>
                 </p>
-                <p style="font-size: 13px; color: #666;">*Sau khi chọn gói và quét mã QR, ứng dụng ngân hàng sẽ tự động điền số tiền và nội dung chuyển khoản!</p>
             </div>
         </div>
 
@@ -208,7 +200,7 @@
         const ACCOUNT_NO = "19070205288014"; 
         const ACCOUNT_NAME = "NGUYEN NHU QUYNH"; 
 
-        let currentUser = localStorage.getItem('quiz_user') || null;
+        let currentUser = localStorage.getItem('quiz_google_user') || null;
         let currentXu = 0;
         let allQuestions = [];
         let filteredQuestions = [];
@@ -248,41 +240,23 @@
                 .catch(err => console.error("Lỗi đồng bộ câu hỏi:", err));
         }
 
-        function handleAuth(type) {
-            const user = document.getElementById('username').value.trim();
-            const pass = document.getElementById('password').value.trim();
-            if(!user || !pass) return alert("Vui lòng nhập đầy đủ thông tin!");
+        function loginWithGoogleEmail() {
+            const email = document.getElementById('google-email-input').value.trim();
+            if(!email || !email.includes('@')) return alert("Vui lòng nhập chính xác Email Google!");
 
             document.body.style.cursor = 'wait';
 
-            // Đọc thẻ nhận diện thiết bị
-            const isTrialClaimed = localStorage.getItem('quiz_device_claimed') ? 'true' : 'false';
-
-            fetch(API_URL + "?action=" + type + "&username=" + encodeURIComponent(user) + "&password=" + encodeURIComponent(pass) + "&isTrialClaimed=" + isTrialClaimed)
+            fetch(API_URL + "?action=googleAuth&email=" + encodeURIComponent(email))
                 .then(res => res.json())
                 .then(res => {
                     document.body.style.cursor = 'default';
-                    if(type === 'login' && res.result === 'success') {
-                        currentUser = user;
+                    if(res.result === 'success') {
+                        currentUser = email;
                         currentXu = Number(res.xu) || 0;
-                        localStorage.setItem('quiz_user', user);
-                        localStorage.setItem('quiz_xu', currentXu);
+                        localStorage.setItem('quiz_google_user', email);
                         updateUserBar();
                         renderSubjects();
                         showScreen('subject-screen');
-                    } else if(type === 'register' && res.result === 'success') {
-                        // Đánh dấu thiết bị này đã từng nhận quà
-                        localStorage.setItem('quiz_device_claimed', 'true');
-                        
-                        if (res.xu > 0) {
-                            alert("Đăng ký thành công! Bạn nhận được " + res.xu + " Xu trải nghiệm làm thử. Bấm 'Đăng nhập' để làm bài!");
-                        } else {
-                            alert("Đăng ký thành công! Thiết bị này đã hết lượt làm thử miễn phí. Tài khoản có 0 Xu, vui lòng nạp Xu để làm bài.");
-                        }
-                    } else if(res.result === 'exists') {
-                        alert("Tài khoản này đã tồn tại!");
-                    } else {
-                        alert("Sai tên đăng nhập hoặc mật khẩu!");
                     }
                 })
                 .catch(err => {
@@ -292,9 +266,7 @@
         }
 
         function logout() {
-            // Chỉ xóa thông tin Đăng nhập, GIỮ LẠI cờ quiz_device_claimed trên máy
-            localStorage.removeItem('quiz_user');
-            localStorage.removeItem('quiz_xu');
+            localStorage.clear();
             currentUser = null;
             currentXu = 0;
             updateUserBar();
@@ -303,7 +275,7 @@
 
         function updateUserBar() {
             if(currentUser) {
-                document.getElementById('user-display').innerText = "Học viên: " + currentUser;
+                document.getElementById('user-display').innerText = "Tài khoản: " + currentUser;
                 document.getElementById('xu-display').innerText = "Xu: " + currentXu;
                 document.getElementById('logout-btn').classList.remove('hidden');
             } else {
@@ -376,7 +348,6 @@
                     if (res.message) alert(res.message);
                     if (res.newXu !== undefined) {
                         currentXu = res.newXu;
-                        localStorage.setItem('quiz_xu', currentXu);
                         updateUserBar();
                     }
                     startQuiz(bodeName);
@@ -458,7 +429,12 @@
             }
         };
 
-        showScreen('auth-screen');
+        if(currentUser) {
+            updateUserBar();
+            showScreen('subject-screen');
+        } else {
+            showScreen('auth-screen');
+        }
         loadAllQuestions();
     </script>
 </body>
