@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Luyện Thi Trắc Nghiệm Premium</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --success-color: #2ecc71;
+            --bg-color: #f8f9fa;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .user-info-bar {
+            background: #e2e8f0;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .btn:hover { background-color: #2980b9; }
+        .btn-danger { background-color: var(--accent-color); }
+        .btn-danger:hover { background-color: #c0392b; }
+        .btn-success { background-color: var(--success-color); }
+        .btn-success:hover { background-color: #27ae60; }
+        
+        .auth-form input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        .grid-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .grid-item {
+            background: #ecf0f1;
+            padding: 20px;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+            border: 1px solid #bdc3c7;
+        }
+        .grid-item:hover { background: #d5dbdb; }
+
+        .option-item {
+            background-color: #f0f3f4;
+            margin: 12px 0;
+            padding: 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid #d5dbdb;
+            transition: 0.2s;
+        }
+        .option-item:hover { background-color: #eaeded; }
+        .option-item.correct { background-color: var(--success-color) !important; color: white; }
+        .option-item.wrong { background-color: var(--accent-color) !important; color: white; }
+        
+        .qr-box {
+            text-align: center;
+            padding: 20px;
+            border: 2px dashed var(--accent-color);
+            border-radius: 8px;
+            background: #fdf2f2;
+        }
+        .qr-image {
+            max-width: 250px;
+            width: 100%;
+            margin: 15px 0;
+        }
+        .hidden { display: none !important; }
+        
+        @media print {
+            body { display: none; }
+        }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+    <div class="header">HỆ THỐNG LUYỆN THI TRẮC NGHIỆM</div>
+    
+    <div class="user-info-bar">
+        <span id="user-display">Chưa đăng nhập</span>
+        <span id="xu-display">Xu: 0</span>
+        <button id="logout-btn" class="hidden" onclick="logout()" style="padding: 4px 10px; cursor:pointer;">Đăng xuất</button>
+    </div>
+
+    <div class="container">
+        <!-- 1. MÀN HÌNH ĐĂNG NHẬP / ĐĂNG KÝ -->
+        <div id="auth-screen" class="card auth-form">
+            <h3 style="margin-top:0;">Đăng Nhập Hệ Thống Học Tập</h3>
+            <input type="text" id="username" placeholder="Tên đăng nhập hoặc Email">
+            <input type="password" id="password" placeholder="Mật khẩu">
+            <button class="btn" onclick="handleAuth('login')" style="margin-bottom: 10px;">Đăng nhập</button>
+            <button class="btn btn-success" onclick="handleAuth('register')">Đăng ký tài khoản mới</button>
+        </div>
+
+        <!-- 2. MÀN HÌNH CHỌN MÔN HỌC -->
+        <div id="subject-screen" class="card hidden">
+            <div style="background: #eef6fc; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #bce0fd;">
+                <h4 style="margin: 0 0 10px 0;">📂 Tải Lên File Excel Bộ Đề Mới</h4>
+                <input type="file" id="excel-file" accept=".xlsx, .xls, .csv" style="margin-bottom: 8px;">
+                <button class="btn" onclick="uploadExcelQuestions()" style="padding: 6px 12px; font-size: 14px;">Tải Lên Google Sheets</button>
+            </div>
+
+            <h3 style="margin-top:0;">Chọn Môn Học</h3>
+            <div id="subject-list" class="grid-list"></div>
+        </div>
+
+        <!-- 3. MÀN HÌNH CHỌN BỘ ĐỀ -->
+        <div id="bode-screen" class="card hidden">
+            <button class="btn btn-danger" onclick="showScreen('subject-screen')" style="width: auto; padding: 5px 15px; margin-bottom: 15px;">← Quay lại chọn môn</button>
+            <h3 id="selected-subject-title" style="margin-top:0;">Danh Sách Bộ Đề</h3>
+            <div id="bode-list" class="grid-list"></div>
+        </div>
+
+        <!-- 4. MÀN HÌNH KHÓA NẠP TIỀN -->
+        <div id="payment-screen" class="card hidden">
+            <button class="btn btn-danger" onclick="showScreen('bode-screen')" style="width: auto; padding: 5px 15px; margin-bottom: 15px;">← Quay lại</button>
+            <div class="qr-box">
+                <h3 style="color: var(--accent-color); margin-top:0;">Hết Lượt Làm Thử Miễn Phí!</h3>
+                <p>Bộ đề này yêu cầu <b>5 xu</b> cho mỗi lượt làm tiếp theo.</p>
+                <p>10.000đ = 5 Xu | 50.000đ = 50 Xu | 250.000đ = Mua Đứt Bộ Đề</p>
+                <img class="qr-image" id="vietqr-img" src="" alt="Mã QR thanh toán">
+                <p style="background: #fff; padding: 10px; border: 1px solid #ddd; font-weight: bold; color: #333;">
+                    Nội dung CK bắt buộc: <span id="qr-content" style="color: blue;"></span>
+                </p>
+                <p style="font-size: 13px; color: #666;">*Sau khi chuyển khoản thành công, Admin sẽ duyệt cộng xu cho bạn!</p>
+            </div>
+        </div>
+
+        <!-- 5. MÀN HÌNH LÀM BÀI TRẮC NGHIỆM -->
+        <div id="quiz-screen" class="card hidden">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h4 id="quiz-progress" style="margin:0; color:#666;">Câu 1/10</h4>
+            </div>
+            <h2 id="quiz-question" style="margin-top:0; font-size: 20px;">Nội dung câu hỏi?</h2>
+            <div id="quiz-options"></div>
+            <button id="next-btn" class="btn" style="margin-top: 20px; display:none;">Câu tiếp theo</button>
+        </div>
+
+        <!-- 6. MÀN HÌNH KẾT QUẢ -->
+        <div id="result-screen" class="card hidden" style="text-align: center;">
+            <h2>Kết Quả Làm Bài</h2>
+            <p id="result-text" style="font-size: 22px; font-weight: bold; color: var(--primary-color);"></p>
+            <button class="btn" onclick="showScreen('subject-screen')">Quay về trang chủ môn học</button>
+        </div>
+    </div>
+
+    <script>
+        // 1. THAY DÒNG DƯỚI BẰNG LINK GOOGLE APPS SCRIPT CỦA BẠN Ơ GIAI ĐOẠN 1:
+        const API_URL = "https://script.google.com/macros/s/AKfycby6x9jnb1zmVwjuOEaZgdkOR3HFFoRW3n36dP1GhXB9WCdnnLBge3RBibRvOGJh0s0eng/exec";
+        
+        // 2. THAY THÔNG TIN TÀI KHOẢN NGÂN HÀNG CỦA BẠN ĐỂ HIỆN QR
+        const BANK_ID = "TECHCOMBANK"; // Mã ngân hàng: MB, VCB, ACB, Techcombank, TPB...
+        const ACCOUNT_NO = "19070205288014"; // Số tài khoản của bạn
+        const ACCOUNT_NAME = "NNGUYEN NHU QUYNH"; // Tên tài khoản không dấu
+
+        let currentUser = localStorage.getItem('quiz_user') || null;
+        let currentXu = parseInt(localStorage.getItem('quiz_xu')) || 0;
+        let allQuestions = [];
+        let filteredQuestions = [];
+        let currentQIndex = 0;
+        let userScore = 0;
+        let currentBoDe = "";
+        let isAnswered = false;
+
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'u' || e.key === 'a' || e.key === 's' || e.key === 'p')) {
+                e.preventDefault();
+                return false;
+            }
+            if (e.key === "F12" || (e.ctrlKey && e.shiftKey && e.key === "I")) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        function showScreen(screenId) {
+            const screens = ['auth-screen', 'subject-screen', 'bode-screen', 'payment-screen', 'quiz-screen', 'result-screen'];
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.classList.add('hidden');
+            });
+            const targetEl = document.getElementById(screenId);
+            if(targetEl) targetEl.classList.remove('hidden');
+        }
+
+        function loadAllQuestions() {
+            fetch(API_URL + "?action=readQuestions")
+                .then(res => res.json())
+                .then(data => { 
+                    allQuestions = data; 
+                    if(currentUser) { renderSubjects(); }
+                })
+                .catch(err => console.error("Lỗi đồng bộ câu hỏi:", err));
+        }
+
+        function handleAuth(type) {
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
+            if(!user || !pass) return alert("Vui lòng nhập đầy đủ thông tin!");
+
+            fetch(API_URL + "?action=" + type + "&username=" + encodeURIComponent(user) + "&password=" + encodeURIComponent(pass))
+                .then(res => res.json())
+                .then(res => {
+                    if(type === 'login' && res.result === 'success') {
+                        currentUser = user;
+                        currentXu = res.xu;
+                        localStorage.setItem('quiz_user', user);
+                        localStorage.setItem('quiz_xu', res.xu);
+                        updateUserBar();
+                        renderSubjects();
+                        showScreen('subject-screen');
+                    } else if(type === 'register' && res.result === 'success') {
+                        alert("Đăng ký thành công! Bạn nhận được 10 Xu miễn phí. Hãy bấm Đăng Nhập.");
+                    } else if(res.result === 'exists') {
+                        alert("Tài khoản này đã tồn tại!");
+                    } else {
+                        alert("Sai tên đăng nhập hoặc mật khẩu!");
+                    }
+                })
+                .catch(err => alert("Lỗi kết nối máy chủ dữ liệu!"));
+        }
+
+        function logout() {
+            localStorage.clear();
+            currentUser = null;
+            currentXu = 0;
+            updateUserBar();
+            showScreen('auth-screen');
+        }
+
+        function updateUserBar() {
+            if(currentUser) {
+                document.getElementById('user-display').innerText = "Học viên: " + currentUser;
+                document.getElementById('xu-display').innerText = "Xu: " + currentXu;
+                document.getElementById('logout-btn').classList.remove('hidden');
+            } else {
+                document.getElementById('user-display').innerText = "Chưa đăng nhập";
+                document.getElementById('xu-display').innerText = "Xu: 0";
+                document.getElementById('logout-btn').classList.add('hidden');
+            }
+        }
+
+        function renderSubjects() {
+            const listContainer = document.getElementById('subject-list');
+            listContainer.innerHTML = "";
+            if (!allQuestions || allQuestions.length === 0) {
+                listContainer.innerHTML = "Chưa có dữ liệu môn học. Vui lòng tải file Excel lên.";
+                return;
+            }
+            const uniqueSubjects = [...new Set(allQuestions.map(item => item.mon))];
+            uniqueSubjects.forEach(mon => {
+                if(!mon) return;
+                const div = document.createElement('div');
+                div.className = 'grid-item';
+                div.innerText = mon;
+                div.onclick = () => renderBoDe(mon);
+                listContainer.appendChild(div);
+            });
+        }
+
+        function renderBoDe(subjectName) {
+            document.getElementById('selected-subject-title').innerText = "Bộ Đề Môn: " + subjectName;
+            const listContainer = document.getElementById('bode-list');
+            listContainer.innerHTML = "";
+            const subQuestions = allQuestions.filter(q => q.mon === subjectName);
+            const uniqueBoDe = [...new Set(subQuestions.map(item => item.bode))];
+            uniqueBoDe.forEach(bode => {
+                if(!bode) return;
+                const div = document.createElement('div');
+                div.className = 'grid-item';
+                div.innerText = bode.replace(/_/g, ' ');
+                div.onclick = () => selectBoDe(bode);
+                listContainer.appendChild(div);
+            });
+            showScreen('bode-screen');
+        }
+
+        function selectBoDe(bodeName) {
+            currentBoDe = bodeName;
+            fetch(API_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "checkAndDeduct",
+                    username: currentUser,
+                    bode: currentBoDe
+                })
+            })
+            .then(res => res.json())
+            .then(res => {
+                if(res.status === "allow") {
+                    if(res.message) alert(res.message);
+                    if(res.newXu !== undefined) {
+                        currentXu = res.newXu;
+                        localStorage.setItem('quiz_xu', currentXu);
+                        updateUserBar();
+                    }
+                    startQuiz(bodeName);
+                } else if(res.status === "block" && res.reason === "no_xu") {
+                    document.getElementById('qr-content').innerText = "NAPXU " + currentUser;
+                    const qrUrl = "https://img.vietqr.io/image/" + BANK_ID + "-" + ACCOUNT_NO + "-compact2.png?amount=10000&addInfo=NAPXU%20" + encodeURIComponent(currentUser) + "&accountName=" + encodeURIComponent(ACCOUNT_NAME);
+                    document.getElementById('vietqr-img').src = qrUrl;
+                    showScreen('payment-screen');
+                }
+            })
+            .catch(err => alert("Không thể kiểm tra số dư xu lúc này!"));
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function startQuiz(bodeName) {
+            let baseQuestions = allQuestions.filter(q => q.bode === bodeName);
+            filteredQuestions = shuffle([...baseQuestions]);
+            currentQIndex = 0;
+            userScore = 0;
+            showScreen('quiz-screen');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            isAnswered = false;
+            document.getElementById('next-btn').style.display = 'none';
+            let currentQ = filteredQuestions[currentQIndex];
+            document.getElementById('quiz-progress').innerText = "Câu " + (currentQIndex + 1) + "/" + filteredQuestions.length;
+            document.getElementById('quiz-question').innerText = currentQ.q;
+            const optionsBox = document.getElementById('quiz-options');
+            optionsBox.innerHTML = "";
+            const labels = ['A', 'B', 'C', 'D'];
+            currentQ.a.forEach((ans, index) => {
+                const div = document.createElement('div');
+                div.className = 'option-item';
+                div.innerText = labels[index] + ". " + ans;
+                div.onclick = () => checkUserAnswer(div, labels[index], currentQ.correct);
+                optionsBox.appendChild(div);
+            });
+        }
+
+        function checkUserAnswer(element, selectedLetter, correctLetter) {
+            if(isAnswered) return;
+            isAnswered = true;
+            const options = document.querySelectorAll('.option-item');
+            const labels = ['A', 'B', 'C', 'D'];
+            let correctIndex = labels.indexOf(correctLetter);
+            
+            if(selectedLetter === correctLetter) {
+                element.classList.add('correct');
+                userScore++;
+            } else {
+                element.classList.add('wrong');
+                if(correctIndex !== -1) {
+                    options[correctIndex].classList.add('correct');
+                }
+            }
+            document.getElementById('next-btn').style.display = 'block';
+        }
+
+        document.getElementById('next-btn').onclick = function() {
+            currentQIndex++;
+            if(currentQIndex < filteredQuestions.length) {
+                loadQuestion();
+            } else {
+                document.getElementById('result-text').innerText = "Bạn làm đúng " + userScore + " / " + filteredQuestions.length + " câu!";
+                showScreen('result-screen');
+            }
+        };
+
+        function uploadExcelQuestions() {
+            let fileInput = document.getElementById('excel-file');
+            let file = fileInput.files[0];
+            if(!file) return alert("Vui lòng chọn file Excel!");
+
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                let data = new Uint8Array(e.target.result);
+                let workbook = XLSX.read(data, {type: 'array'});
+                let firstSheet = workbook.SheetNames[0];
+                let rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet], {header: 1});
+
+                rows.shift();
+
+                fetch(API_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ action: "uploadQuestions", questions: rows })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.status === "success") {
+                        alert("Tải bộ đề lên thành công!");
+                        loadAllQuestions();
+                    }
+                })
+                .catch(err => alert("Lỗi khi tải file lên!"));
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        if(currentUser) {
+            updateUserBar();
+            showScreen('subject-screen');
+        }
+        loadAllQuestions();
+    </script>
+</body>
+</html>
