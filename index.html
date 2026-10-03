@@ -128,17 +128,19 @@
     </div>
 
     <div class="container">
-        <!-- 1. MÀN HÌNH ĐĂNG NHẬP / ĐĂNG KÝ XÁC NHẬN BẰNG GOOGLE EMAIL -->
+        <!-- 1. MÀN HÌNH ĐĂNG NHẬP XÁC THỰC BẰNG GOOGLE CHÍNH THỨC -->
         <div id="auth-screen" class="card" style="text-align: center;">
             <h3 style="margin-top:0;">Đăng Nhập / Đăng Ký Học Tập</h3>
-            <p style="color: #666; font-size: 14px;">Nhập Email Google để bắt đầu. Mỗi tài khoản nhận được <b>1 lần làm thử bài thi FREE duy nhất</b>!</p>
+            <p style="color: #666; font-size: 14px; margin-bottom: 25px;">Vui lòng xác thực tài khoản Google thực của bạn. Mỗi tài khoản được <b>1 lần làm thử bài thi FREE duy nhất</b>!</p>
             
             <div style="margin: 25px 0;">
-                <input type="email" id="google-email-input" placeholder="Nhập địa chỉ Email Google của bạn..." style="width: 85%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; margin-bottom: 15px; box-sizing: border-box;">
-                <button class="btn btn-success" onclick="loginWithGoogleEmail()" style="width: 85%;">Đăng Nhập / Đăng Ký Cùng Google Email</button>
+                <button class="btn btn-success" onclick="redirectToGoogleAuth()" style="width: 85%; padding: 15px; font-size: 18px;">
+                    <img src="https://www.google.com/favicon.ico" style="width: 20px; vertical-align: middle; margin-right: 10px;">
+                    Đăng Nhập Bằng Tài Khoản Google
+                </button>
             </div>
             
-            <p style="font-size: 12px; color: #888;">*Tài khoản mới sẽ tự động đăng ký vào hệ thống với 0 Xu và 1 lượt làm thử miễn phí.</p>
+            <p style="font-size: 12px; color: #888;">*Hệ thống xác thực trực tiếp qua Google để đảm bảo chính chủ, chống mạo danh Email.</p>
         </div>
 
         <!-- 2. MÀN HÌNH CHỌN MÔN HỌC -->
@@ -161,7 +163,6 @@
                 <h3 style="color: var(--accent-color); margin-top:0;">Bạn Đã Hết Lượt Làm Thử Free!</h3>
                 <p>Mỗi tài khoản Google chỉ có 1 lượt làm thử free. Vui lòng chọn gói nạp bên dưới để tiếp tục:</p>
 
-                <!-- 3 NÚT CHỌN SỐ TIỀN DÀNH CHO KHÁCH -->
                 <div style="display: flex; gap: 10px; justify-content: center; margin: 15px 0; flex-wrap: wrap;">
                     <button class="btn" onclick="updateQR(10000)" style="width: auto; padding: 10px 15px; font-size: 14px;">Gói Lẻ: 10.000đ (5 Xu)</button>
                     <button class="btn btn-success" onclick="updateQR(50000)" style="width: auto; padding: 10px 15px; font-size: 14px;">Combo: 50.000đ (50 Xu)</button>
@@ -222,6 +223,25 @@
             }
         });
 
+        // Xử lý đọc kết quả trả về từ Google OAuth Redirect
+        const urlParams = new URLSearchParams(window.location.search);
+        const authEmail = urlParams.get('email');
+        const authXu = urlParams.get('xu');
+
+        if (authEmail) {
+            currentUser = authEmail;
+            currentXu = Number(authXu) || 0;
+            localStorage.setItem('quiz_google_user', authEmail);
+            // Bỏ tham số trên URL để trang web sạch đẹp
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        function redirectToGoogleAuth() {
+            const currentAppUrl = window.location.href.split('?')[0];
+            const googleAuthUrl = API_URL + "?action=googleLoginRedirect&redirect_url=" + encodeURIComponent(currentAppUrl);
+            window.location.href = googleAuthUrl;
+        }
+
         function showScreen(screenId) {
             const screens = ['auth-screen', 'subject-screen', 'bode-screen', 'payment-screen', 'quiz-screen', 'result-screen'];
             screens.forEach(id => {
@@ -240,33 +260,6 @@
                     if(currentUser) { renderSubjects(); }
                 })
                 .catch(err => console.error("Lỗi đồng bộ câu hỏi:", err));
-        }
-
-        function loginWithGoogleEmail() {
-            const email = document.getElementById('google-email-input').value.trim().toLowerCase();
-            if(!email || !email.includes('@')) return alert("Vui lòng nhập đúng dạng Email Google (ví dụ: abc@gmail.com)!");
-
-            document.body.style.cursor = 'wait';
-
-            fetch(API_URL + "?action=googleAuth&email=" + encodeURIComponent(email))
-                .then(res => res.json())
-                .then(res => {
-                    document.body.style.cursor = 'default';
-                    if(res.result === 'success') {
-                        currentUser = email;
-                        currentXu = Number(res.xu) || 0;
-                        localStorage.setItem('quiz_google_user', email);
-                        updateUserBar();
-                        renderSubjects();
-                        showScreen('subject-screen');
-                    } else {
-                        alert("Không thể kết nối máy chủ dữ liệu!");
-                    }
-                })
-                .catch(err => {
-                    document.body.style.cursor = 'default';
-                    alert("Lỗi kết nối máy chủ dữ liệu!");
-                });
         }
 
         function logout() {
