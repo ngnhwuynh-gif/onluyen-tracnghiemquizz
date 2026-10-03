@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ Thống Luyện Thi Trắc Nghiệm Premium</title>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -149,13 +148,7 @@
 
         <!-- 2. MÀN HÌNH CHỌN MÔN HỌC -->
         <div id="subject-screen" class="card hidden">
-            <div style="background: #eef6fc; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #bce0fd;">
-                <h4 style="margin: 0 0 10px 0;">📂 Tải Lên File Excel Bộ Đề Mới</h4>
-                <input type="file" id="excel-file" accept=".xlsx, .xls, .csv" style="margin-bottom: 8px;">
-                <button class="btn" onclick="uploadExcelQuestions()" style="padding: 6px 12px; font-size: 14px;">Tải Lên Google Sheets</button>
-            </div>
-
-            <h3 style="margin-top:0;">Chọn Môn Học</h3>
+            <h3 style="margin-top:0;">Chọn Môn Học Ôn Luyện</h3>
             <div id="subject-list" class="grid-list"></div>
         </div>
 
@@ -200,13 +193,13 @@
     </div>
 
     <script>
-        // 1. THAY DÒNG DƯỚI BẰNG LINK GOOGLE APPS SCRIPT CỦA BẠN Ơ GIAI ĐOẠN 1:
+        // 1. DÁN LINK GOOGLE APPS SCRIPT CỦA BẠN VÀO DÒNG DƯỚI DÂY:
         const API_URL = "https://script.google.com/macros/s/AKfycby6x9jnb1zmVwjuOEaZgdkOR3HFFoRW3n36dP1GhXB9WCdnnLBge3RBibRvOGJh0s0eng/exec";
         
         // 2. THAY THÔNG TIN TÀI KHOẢN NGÂN HÀNG CỦA BẠN ĐỂ HIỆN QR
         const BANK_ID = "TECHCOMBANK"; // Mã ngân hàng: MB, VCB, ACB, Techcombank, TPB...
-        const ACCOUNT_NO = "19070205288014"; // Số tài khoản của bạn
-        const ACCOUNT_NAME = "NNGUYEN NHU QUYNH"; // Tên tài khoản không dấu
+        const ACCOUNT_NO = "19070205288014"; // Số tài khoản ngân hàng của bạn
+        const ACCOUNT_NAME = "NGUYEN NHU QUYNH"; // Tên tài khoản không dấu
 
         let currentUser = localStorage.getItem('quiz_user') || null;
         let currentXu = parseInt(localStorage.getItem('quiz_xu')) || 0;
@@ -299,7 +292,7 @@
             const listContainer = document.getElementById('subject-list');
             listContainer.innerHTML = "";
             if (!allQuestions || allQuestions.length === 0) {
-                listContainer.innerHTML = "Chưa có dữ liệu môn học. Vui lòng tải file Excel lên.";
+                listContainer.innerHTML = "Chưa có dữ liệu môn học.";
                 return;
             }
             const uniqueSubjects = [...new Set(allQuestions.map(item => item.mon))];
@@ -423,36 +416,6 @@
                 showScreen('result-screen');
             }
         };
-
-        function uploadExcelQuestions() {
-            let fileInput = document.getElementById('excel-file');
-            let file = fileInput.files[0];
-            if(!file) return alert("Vui lòng chọn file Excel!");
-
-            let reader = new FileReader();
-            reader.onload = function(e) {
-                let data = new Uint8Array(e.target.result);
-                let workbook = XLSX.read(data, {type: 'array'});
-                let firstSheet = workbook.SheetNames[0];
-                let rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet], {header: 1});
-
-                rows.shift();
-
-                fetch(API_URL, {
-                    method: "POST",
-                    body: JSON.stringify({ action: "uploadQuestions", questions: rows })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if(data.status === "success") {
-                        alert("Tải bộ đề lên thành công!");
-                        loadAllQuestions();
-                    }
-                })
-                .catch(err => alert("Lỗi khi tải file lên!"));
-            };
-            reader.readAsArrayBuffer(file);
-        }
 
         if(currentUser) {
             updateUserBar();
