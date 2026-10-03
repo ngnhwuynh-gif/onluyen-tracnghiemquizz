@@ -363,7 +363,7 @@
 
         function startQuiz(bodeName) {
             let baseQuestions = allQuestions.filter(q => q.bode === bodeName);
-            filteredQuestions = shuffle([...baseQuestions]);
+            filteredQuestions = shuffle([...baseQuestions]).slice(0, 50);
             currentQIndex = 0;
             userScore = 0;
             showScreen('quiz-screen');
