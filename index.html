@@ -128,17 +128,17 @@
     </div>
 
     <div class="container">
-        <!-- 1. MÀN HÌNH ĐĂNG NHẬP / ĐĂNG KÝ BẰNG GOOGLE EMAIL -->
+        <!-- 1. MÀN HÌNH ĐĂNG NHẬP -->
         <div id="auth-screen" class="card" style="text-align: center;">
-            <h3 style="margin-top:0;">Đăng Nhập / Đăng Ký Học Tập</h3>
-            <p style="color: #666; font-size: 14px;">Mỗi tài khoản Google sẽ nhận được <b>1 lần làm thử bài thi FREE duy nhất</b>!</p>
+            <h3 style="margin-top:0;">Đăng Nhập Học Tập</h3>
+            <p style="color: #666; font-size: 14px;">Mỗi tài khoản Google chỉ được <b>1 lần làm thử bài thi FREE duy nhất</b>!</p>
             
-            <div style="margin: 25px 0;">
-                <input type="email" id="google-email-input" placeholder="Nhập địa chỉ Email Google của bạn..." style="width: 85%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; margin-bottom: 15px; box-sizing: border-box;">
-                <button class="btn btn-success" onclick="loginWithGoogleEmail()" style="width: 85%;">Đăng Nhập Bằng Google Email</button>
+            <div style="margin: 25px 0; display: flex; flex-direction: column; align-items: center;">
+                <input type="email" id="google-email-input" placeholder="Nhập Gmail chính thức của bạn..." style="width: 85%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; margin-bottom: 15px; box-sizing: border-box;">
+                <button class="btn btn-success" onclick="loginWithGoogleEmail()" style="width: 85%;">Đăng Nhập Vào Hệ Thống</button>
             </div>
             
-            <p style="font-size: 12px; color: #888;">*Tài khoản mới sẽ tự động đăng ký vào hệ thống với 0 Xu và 1 lượt làm thử miễn phí duy nhất.</p>
+            <p style="font-size: 12px; color: #e74c3c;">*Vui lòng nhập chính xác Gmail để hệ thống ghi nhận số Xu khi bạn nạp tiền qua QR.</p>
         </div>
 
         <!-- 2. MÀN HÌNH CHỌN MÔN HỌC -->
@@ -159,7 +159,7 @@
             <button class="btn btn-danger" onclick="showScreen('bode-screen')" style="width: auto; padding: 5px 15px; margin-bottom: 15px;">← Quay lại</button>
             <div class="qr-box">
                 <h3 style="color: var(--accent-color); margin-top:0;">Bạn Đã Hết Lượt Làm Thử Free!</h3>
-                <p>Mỗi tài khoản Google chỉ có 1 lượt làm thử free. Vui lòng nạp xu để tiếp tục học:</p>
+                <p>Mỗi tài khoản chỉ có 1 lượt làm thử free. Vui lòng nạp xu để tiếp tục (5 Xu / 1 lượt làm):</p>
 
                 <div style="display: flex; gap: 10px; justify-content: center; margin: 15px 0; flex-wrap: wrap;">
                     <button class="btn" onclick="updateQR(10000)" style="width: auto; padding: 10px 15px; font-size: 14px;">Gói Lẻ: 10.000đ (5 Xu)</button>
@@ -195,7 +195,8 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycby6x9jnb1zmVwjuOEaZgdkOR3HFFoRW3n36dP1GhXB9WCdnnLBge3RBibRvOGJh0s0eng/exec";
+        // Dán URL Deploy Web App mới của bạn vào giữa 2 dấu ngoặc kép bên dưới:
+        const API_URL = "THAY_BANG_LINK_DEPLOY_MOI_CUA_BAN";
         
         const BANK_ID = "TECHCOMBANK"; 
         const ACCOUNT_NO = "19070205288014"; 
@@ -258,8 +259,10 @@
 
         function loginWithGoogleEmail() {
             const emailInput = document.getElementById('google-email-input').value.trim().toLowerCase();
-            if(!emailInput || !emailInput.includes('@')) {
-                return alert("Vui lòng nhập chính xác Email Google (ví dụ: abc@gmail.com)!");
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            
+            if(!emailInput || !emailRegex.test(emailInput)) {
+                return alert("Vui lòng nhập chính xác định dạng Email Google (Ví dụ: abc@gmail.com)!");
             }
 
             document.body.style.cursor = 'wait';
@@ -304,7 +307,7 @@
             const listContainer = document.getElementById('subject-list');
             listContainer.innerHTML = "";
             if (!allQuestions || allQuestions.length === 0) {
-                listContainer.innerHTML = "Chưa có dữ liệu môn học.";
+                listContainer.innerHTML = "Đang kết nối dữ liệu câu hỏi...";
                 return;
             }
             const uniqueSubjects = [...new Set(allQuestions.map(item => item.mon))];
@@ -348,19 +351,10 @@
             currentBoDe = bodeName;
             document.body.style.cursor = 'wait';
 
-            fetch(API_URL, {
-                method: "POST",
-                mode: "cors",
-                redirect: "follow",
-                headers: {
-                    "Content-Type": "text/plain;charset=utf-8"
-                },
-                body: JSON.stringify({
-                    action: "checkAndDeduct",
-                    username: currentUser,
-                    bode: currentBoDe
-                })
-            })
+            // Gọi qua GET để tránh lỗi CORS hoàn toàn
+            const checkUrl = API_URL + "?action=checkAndDeduct&username=" + encodeURIComponent(currentUser) + "&bode=" + encodeURIComponent(currentBoDe);
+
+            fetch(checkUrl)
             .then(res => res.json())
             .then(res => {
                 document.body.style.cursor = 'default';
