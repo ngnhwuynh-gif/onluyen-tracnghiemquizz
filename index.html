@@ -253,7 +253,10 @@
             const pass = document.getElementById('password').value.trim();
             if(!user || !pass) return alert("Vui lòng nhập đầy đủ thông tin!");
 
-            fetch(API_URL + "?action=" + type + "&username=" + encodeURIComponent(user) + "&password=" + encodeURIComponent(pass))
+            // Kiểm tra xem thiết bị này đã từng nhận Xu làm thử chưa
+            const isTrialClaimed = localStorage.getItem('quiz_device_claimed') ? 'true' : 'false';
+
+            fetch(API_URL + "?action=" + type + "&username=" + encodeURIComponent(user) + "&password=" + encodeURIComponent(pass) + "&isTrialClaimed=" + isTrialClaimed)
                 .then(res => res.json())
                 .then(res => {
                     if(type === 'login' && res.result === 'success') {
@@ -265,7 +268,13 @@
                         renderSubjects();
                         showScreen('subject-screen');
                     } else if(type === 'register' && res.result === 'success') {
-                        alert("Đăng ký thành công! Bạn nhận được 10 Xu miễn phí. Hãy bấm Đăng Nhập.");
+                        // Đánh dấu thiết bị này đã nhận lượt làm thử 1 lần
+                        localStorage.setItem('quiz_device_claimed', 'true');
+                        if (res.xu > 0) {
+                            alert("Đăng ký thành công! Bạn nhận được " + res.xu + " Xu làm thử miễn phí. Hãy bấm Đăng Nhập.");
+                        } else {
+                            alert("Đăng ký thành công! Thiết bị này đã hết lượt làm thử miễn phí. Vui lòng đăng nhập và nạp Xu để làm bài.");
+                        }
                     } else if(res.result === 'exists') {
                         alert("Tài khoản này đã tồn tại!");
                     } else {
@@ -276,7 +285,9 @@
         }
 
         function logout() {
-            localStorage.clear();
+            // Chỉ xóa thông tin đăng nhập, KHÔNG xóa cờ quiz_device_claimed
+            localStorage.removeItem('quiz_user');
+            localStorage.removeItem('quiz_xu');
             currentUser = null;
             currentXu = 0;
             updateUserBar();
