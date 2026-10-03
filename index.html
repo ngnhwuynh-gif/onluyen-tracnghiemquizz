@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ôn Tập Trắc Nghiệm </title>
+    <title>Ôn Tập Trắc Nghiệm</title>
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -209,7 +209,7 @@
         const ACCOUNT_NAME = "NGUYEN NHU QUYNH"; 
 
         let currentUser = localStorage.getItem('quiz_user') || null;
-        let currentXu = 0; // MẶC ĐỊNH LÀ 0 XU
+        let currentXu = 0;
         let allQuestions = [];
         let filteredQuestions = [];
         let currentQIndex = 0;
@@ -255,20 +255,30 @@
 
             document.body.style.cursor = 'wait';
 
-            fetch(API_URL + "?action=" + type + "&username=" + encodeURIComponent(user) + "&password=" + encodeURIComponent(pass))
+            // Đọc thẻ nhận diện thiết bị
+            const isTrialClaimed = localStorage.getItem('quiz_device_claimed') ? 'true' : 'false';
+
+            fetch(API_URL + "?action=" + type + "&username=" + encodeURIComponent(user) + "&password=" + encodeURIComponent(pass) + "&isTrialClaimed=" + isTrialClaimed)
                 .then(res => res.json())
                 .then(res => {
                     document.body.style.cursor = 'default';
                     if(type === 'login' && res.result === 'success') {
                         currentUser = user;
-                        currentXu = Number(res.xu) || 0; // LẤY XU THỰC TẾ TỪ GOOGLE SHEET
+                        currentXu = Number(res.xu) || 0;
                         localStorage.setItem('quiz_user', user);
                         localStorage.setItem('quiz_xu', currentXu);
                         updateUserBar();
                         renderSubjects();
                         showScreen('subject-screen');
                     } else if(type === 'register' && res.result === 'success') {
-                        alert("Đăng ký thành công! Tài khoản của bạn có 0 Xu. Vui lòng bấm 'Đăng nhập' để vào làm bài.");
+                        // Đánh dấu thiết bị này đã từng nhận quà
+                        localStorage.setItem('quiz_device_claimed', 'true');
+                        
+                        if (res.xu > 0) {
+                            alert("Đăng ký thành công! Bạn nhận được " + res.xu + " Xu trải nghiệm làm thử. Bấm 'Đăng nhập' để làm bài!");
+                        } else {
+                            alert("Đăng ký thành công! Thiết bị này đã hết lượt làm thử miễn phí. Tài khoản có 0 Xu, vui lòng nạp Xu để làm bài.");
+                        }
                     } else if(res.result === 'exists') {
                         alert("Tài khoản này đã tồn tại!");
                     } else {
@@ -282,7 +292,9 @@
         }
 
         function logout() {
-            localStorage.clear();
+            // Chỉ xóa thông tin Đăng nhập, GIỮ LẠI cờ quiz_device_claimed trên máy
+            localStorage.removeItem('quiz_user');
+            localStorage.removeItem('quiz_xu');
             currentUser = null;
             currentXu = 0;
             updateUserBar();
@@ -446,12 +458,7 @@
             }
         };
 
-        // Nếu đã từng đăng nhập -> tự động đăng nhập lại và đồng bộ xu chuẩn từ Google Sheet
-        if(currentUser) {
-            handleAuth('login');
-        } else {
-            showScreen('auth-screen');
-        }
+        showScreen('auth-screen');
         loadAllQuestions();
     </script>
 </body>
