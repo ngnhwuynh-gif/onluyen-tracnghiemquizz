@@ -323,36 +323,65 @@
             showScreen('bode-screen');
         }
 
-        function selectBoDe(bodeName) {
-            currentBoDe = bodeName;
-            fetch(API_URL, {
-                method: "POST",
-                body: JSON.stringify({
-                    action: "checkAndDeduct",
-                    username: currentUser,
-                    bode: currentBoDe
-                })
-            })
-            .then(res => res.json())
-            .then(res => {
-                if(res.status === "allow") {
-                    if(res.message) alert(res.message);
-                    if(res.newXu !== undefined) {
-                        currentXu = res.newXu;
-                        localStorage.setItem('quiz_xu', currentXu);
-                        updateUserBar();
-                    }
-                    startQuiz(bodeName);
-                } else if(res.status === "block" && res.reason === "no_xu") {
-                    document.getElementById('qr-content').innerText = "NAPXU " + currentUser;
-                    const qrUrl = "https://img.vietqr.io/image/" + BANK_ID + "-" + ACCOUNT_NO + "-compact2.png?amount=10000&addInfo=NAPXU%20" + encodeURIComponent(currentUser) + "&accountName=" + encodeURIComponent(ACCOUNT_NAME);
-                    document.getElementById('vietqr-img').src = qrUrl;
-                    showScreen('payment-screen');
-                }
-            })
-            .catch(err => alert("Không thể kiểm tra số dư xu lúc này!"));
+       let currentSelectedAmount = 10000;
+
+        function updateQR(amount) {
+            currentSelectedAmount = amount;
+            document.getElementById('selected-amount').innerText = amount.toLocaleString('vi-VN');
+            const qrUrl = "https://img.vietqr.io/image/" + BANK_ID + "-" + ACCOUNT_NO + "-compact2.png?amount=" + currentSelectedAmount + "&addInfo=NAPXU%20" + encodeURIComponent(currentUser) + "&accountName=" + encodeURIComponent(ACCOUNT_NAME);
+            document.getElementById('vietqr-img').src = qrUrl;
         }
 
+        function selectBoDe(bodeName) {
+            currentBoDe = bodeName;
+            document.body.style.cursor = 'wait';
+
+            // 1. Đồng bộ số xu mới nhất trực tiếp từ Google Sheet
+            fetch(API_URL + "?action=login&username=" + encodeURIComponent(currentUser) + "&password=")
+            .then(res => res.json())
+            .then(userData => {
+                document.body.style.cursor = 'default';
+
+                if (userData.xu !== undefined) {
+                    currentXu = Number(userData.xu);
+                    localStorage.setItem('quiz_xu', currentXu);
+                    updateUserBar();
+                }
+
+                // 2. Tiến hành kiểm tra điều kiện làm đề/trừ xu trên Google Sheet
+                fetch(API_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "checkAndDeduct",
+                        username: currentUser,
+                        bode: currentBoDe
+                    })
+                })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.status === "allow") {
+                        if (res.message) alert(res.message);
+                        if (res.newXu !== undefined) {
+                            currentXu = res.newXu;
+                            localStorage.setItem('quiz_xu', currentXu);
+                            updateUserBar();
+                        }
+                        startQuiz(bodeName);
+                    } else if (res.status === "block" && res.reason === "no_xu") {
+                        document.getElementById('qr-content').innerText = "NAPXU " + currentUser;
+                        updateQR(10000); 
+                        showScreen('payment-screen');
+                    }
+                })
+                .catch(err => {
+                    alert("Không thể kiểm tra số dư xu lúc này!");
+                });
+            })
+            .catch(err => {
+                document.body.style.cursor = 'default';
+                alert("Lỗi kết nối máy chủ dữ liệu!");
+            });
+        }
         function shuffle(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
