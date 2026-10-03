@@ -159,7 +159,7 @@
             <div id="bode-list" class="grid-list"></div>
         </div>
 
-       <!-- 4. MÀN HÌNH KHÓA NẠP TIỀN -->
+        <!-- 4. MÀN HÌNH KHÓA NẠP TIỀN -->
         <div id="payment-screen" class="card hidden">
             <button class="btn btn-danger" onclick="showScreen('bode-screen')" style="width: auto; padding: 5px 15px; margin-bottom: 15px;">← Quay lại</button>
             <div class="qr-box">
@@ -202,13 +202,11 @@
     </div>
 
     <script>
-        // 1. DÁN LINK GOOGLE APPS SCRIPT CỦA BẠN VÀO DÒNG DƯỚI DÂY:
         const API_URL = "https://script.google.com/macros/s/AKfycby6x9jnb1zmVwjuOEaZgdkOR3HFFoRW3n36dP1GhXB9WCdnnLBge3RBibRvOGJh0s0eng/exec";
         
-        // 2. THAY THÔNG TIN TÀI KHOẢN NGÂN HÀNG CỦA BẠN ĐỂ HIỆN QR
-        const BANK_ID = "TECHCOMBANK"; // Mã ngân hàng: MB, VCB, ACB, Techcombank, TPB...
-        const ACCOUNT_NO = "19070205288014"; // Số tài khoản ngân hàng của bạn
-        const ACCOUNT_NAME = "NGUYEN NHU QUYNH"; // Tên tài khoản không dấu
+        const BANK_ID = "TECHCOMBANK"; 
+        const ACCOUNT_NO = "19070205288014"; 
+        const ACCOUNT_NAME = "NGUYEN NHU QUYNH"; 
 
         let currentUser = localStorage.getItem('quiz_user') || null;
         let currentXu = parseInt(localStorage.getItem('quiz_xu')) || 0;
@@ -332,7 +330,7 @@
             showScreen('bode-screen');
         }
 
-       let currentSelectedAmount = 10000;
+        let currentSelectedAmount = 10000;
 
         function updateQR(amount) {
             currentSelectedAmount = amount;
@@ -345,52 +343,43 @@
             currentBoDe = bodeName;
             document.body.style.cursor = 'wait';
 
-            // 1. Đồng bộ số xu mới nhất trực tiếp từ Google Sheet
-            fetch(API_URL + "?action=login&username=" + encodeURIComponent(currentUser) + "&password=")
+            fetch(API_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "checkAndDeduct",
+                    username: currentUser,
+                    bode: currentBoDe
+                })
+            })
             .then(res => res.json())
-            .then(userData => {
+            .then(res => {
                 document.body.style.cursor = 'default';
-
-                if (userData.xu !== undefined) {
-                    currentXu = Number(userData.xu);
-                    localStorage.setItem('quiz_xu', currentXu);
-                    updateUserBar();
-                }
-
-                // 2. Tiến hành kiểm tra điều kiện làm đề/trừ xu trên Google Sheet
-                fetch(API_URL, {
-                    method: "POST",
-                    body: JSON.stringify({
-                        action: "checkAndDeduct",
-                        username: currentUser,
-                        bode: currentBoDe
-                    })
-                })
-                .then(res => res.json())
-                .then(res => {
-                    if (res.status === "allow") {
-                        if (res.message) alert(res.message);
-                        if (res.newXu !== undefined) {
-                            currentXu = res.newXu;
-                            localStorage.setItem('quiz_xu', currentXu);
-                            updateUserBar();
-                        }
-                        startQuiz(bodeName);
-                    } else if (res.status === "block" && res.reason === "no_xu") {
-                        document.getElementById('qr-content').innerText = "NAPXU " + currentUser;
-                        updateQR(10000); 
-                        showScreen('payment-screen');
+                if (res.status === "allow") {
+                    if (res.message) alert(res.message);
+                    if (res.newXu !== undefined) {
+                        currentXu = res.newXu;
+                        localStorage.setItem('quiz_xu', currentXu);
+                        updateUserBar();
                     }
-                })
-                .catch(err => {
-                    alert("Không thể kiểm tra số dư xu lúc này!");
-                });
+                    startQuiz(bodeName);
+                } else if (res.status === "block" && res.reason === "no_xu") {
+                    document.getElementById('qr-content').innerText = "NAPXU " + currentUser;
+                    updateQR(10000); 
+                    showScreen('payment-screen');
+                } else {
+                    document.getElementById('qr-content').innerText = "NAPXU " + currentUser;
+                    updateQR(10000); 
+                    showScreen('payment-screen');
+                }
             })
             .catch(err => {
                 document.body.style.cursor = 'default';
-                alert("Lỗi kết nối máy chủ dữ liệu!");
+                document.getElementById('qr-content').innerText = "NAPXU " + currentUser;
+                updateQR(10000);
+                showScreen('payment-screen');
             });
         }
+
         function shuffle(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
