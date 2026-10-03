@@ -241,6 +241,21 @@
                 .catch(err => console.error("Lỗi đồng bộ câu hỏi:", err));
         }
 
+        function syncUserData(emailInput) {
+            return fetch(API_URL + "?action=googleAuth&email=" + encodeURIComponent(emailInput))
+                .then(res => res.json())
+                .then(res => {
+                    if(res.result === 'success') {
+                        currentUser = emailInput;
+                        currentXu = Number(res.xu) || 0;
+                        localStorage.setItem('quiz_google_user', emailInput);
+                        updateUserBar();
+                        return true;
+                    }
+                    return false;
+                });
+        }
+
         function loginWithGoogleEmail() {
             const emailInput = document.getElementById('google-email-input').value.trim().toLowerCase();
             if(!emailInput || !emailInput.includes('@')) {
@@ -249,15 +264,10 @@
 
             document.body.style.cursor = 'wait';
 
-            fetch(API_URL + "?action=googleAuth&email=" + encodeURIComponent(emailInput))
-                .then(res => res.json())
-                .then(res => {
+            syncUserData(emailInput)
+                .then(success => {
                     document.body.style.cursor = 'default';
-                    if(res.result === 'success') {
-                        currentUser = emailInput;
-                        currentXu = Number(res.xu) || 0;
-                        localStorage.setItem('quiz_google_user', emailInput);
-                        updateUserBar();
+                    if(success) {
                         renderSubjects();
                         showScreen('subject-screen');
                     } else {
@@ -340,6 +350,11 @@
 
             fetch(API_URL, {
                 method: "POST",
+                mode: "cors",
+                redirect: "follow",
+                headers: {
+                    "Content-Type": "text/plain;charset=utf-8"
+                },
                 body: JSON.stringify({
                     action: "checkAndDeduct",
                     username: currentUser,
@@ -364,6 +379,7 @@
             })
             .catch(err => {
                 document.body.style.cursor = 'default';
+                console.error("Lỗi kiểm tra Xu:", err);
                 document.getElementById('qr-content').innerText = "NAPXU " + currentUser;
                 updateQR(10000);
                 showScreen('payment-screen');
@@ -435,8 +451,9 @@
         };
 
         if(currentUser) {
-            updateUserBar();
-            showScreen('subject-screen');
+            syncUserData(currentUser).then(() => {
+                showScreen('subject-screen');
+            });
         } else {
             showScreen('auth-screen');
         }
