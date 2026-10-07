@@ -3,455 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Luyện Thi Trắc Nghiệm Premium</title>
+    <title>Quiz Văn Lang - Đăng nhập</title>
+    <!-- Thư viện đăng nhập Google chính thức bằng JavaScript -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
-        :root {
-            --primary-color: #2c3e50;
-            --accent-color: #e74c3c;
-            --success-color: #2ecc71;
-            --bg-color: #f8f9fa;
-        }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
             margin: 0;
             padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-        }
-        .header {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 15px;
-            text-align: center;
-            font-size: 20px;
-            font-weight: bold;
-        }
-        .user-info-bar {
-            background: #e2e8f0;
-            padding: 10px 20px;
+            background-color: #f4f6f9;
+            font-family: Arial, sans-serif;
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
+            height: 100vh;
+        }
+        .login-card {
+            background: #ffffff;
+            padding: 40px 30px;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            width: 380px;
+            text-align: center;
+            border: 1px solid #e5e5e5;
+            box-sizing: border-box;
+        }
+        .title {
+            color: #d32f2f;
+            font-size: 26px;
+            font-weight: bold;
+            margin-bottom: 25px;
+        }
+        hr {
+            border: 0;
+            border-top: 1px solid #eee;
+            margin: 20px 0;
+        }
+        .desc {
             font-size: 14px;
-        }
-        .container {
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 0 15px;
-        }
-        .card {
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            color: #333;
             margin-bottom: 20px;
-        }
-        .btn {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            width: 100%;
             font-weight: bold;
-            transition: 0.3s;
         }
-        .btn:hover { background-color: #2980b9; }
-        .btn-danger { background-color: var(--accent-color); }
-        .btn-danger:hover { background-color: #c0392b; }
-        .btn-success { background-color: var(--success-color); }
-        .btn-success:hover { background-color: #27ae60; }
-        
-        .grid-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
+        .google-btn-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
         }
-        .grid-item {
-            background: #ecf0f1;
-            padding: 20px;
-            border-radius: 6px;
-            text-align: center;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.2s;
-            border: 1px solid #bdc3c7;
-        }
-        .grid-item:hover { background: #d5dbdb; }
-
-        .option-item {
-            background-color: #f0f3f4;
-            margin: 12px 0;
-            padding: 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            border: 1px solid #d5dbdb;
-            transition: 0.2s;
-        }
-        .option-item:hover { background-color: #eaeded; }
-        .option-item.correct { background-color: var(--success-color) !important; color: white; }
-        .option-item.wrong { background-color: var(--accent-color) !important; color: white; }
-        
-        .qr-box {
-            text-align: center;
-            padding: 20px;
-            border: 2px dashed var(--accent-color);
-            border-radius: 8px;
-            background: #fdf2f2;
-        }
-        .qr-image {
-            max-width: 250px;
-            width: 100%;
-            margin: 15px 0;
-        }
-        .hidden { display: none !important; }
-        
-        @media print {
-            body { display: none; }
+        .footer {
+            margin-top: 30px;
+            font-size: 13px;
+            color: #d32f2f;
         }
     </style>
 </head>
-<body oncontextmenu="return false;">
+<body>
 
-    <div class="header">HỆ THỐNG LUYỆN THI TRẮC NGHIỆM</div>
-    
-    <div class="user-info-bar">
-        <span id="user-display">Chưa đăng nhập</span>
-        <span id="xu-display">Xu: 0</span>
-        <button id="logout-btn" class="hidden" onclick="logout()" style="padding: 4px 10px; cursor:pointer;">Đăng xuất</button>
-    </div>
-
-    <div class="container">
-        <!-- 1. MÀN HÌNH ĐĂNG NHẬP -->
-        <div id="auth-screen" class="card" style="text-align: center;">
-            <h3 style="margin-top:0;">Đăng Nhập Học Tập</h3>
-            <p style="color: #666; font-size: 14px;">Mỗi tài khoản Google chỉ được <b>1 lần làm thử bài thi FREE duy nhất</b>!</p>
-            
-            <div style="margin: 25px 0; display: flex; flex-direction: column; align-items: center;">
-                <input type="email" id="google-email-input" placeholder="Nhập Gmail chính thức của bạn..." style="width: 85%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; margin-bottom: 15px; box-sizing: border-box;">
-                <button class="btn btn-success" onclick="loginWithGoogleEmail()" style="width: 85%;">Đăng Nhập Vào Hệ Thống</button>
+    <div class="login-card">
+        <div class="title">Quiz Văn Lang</div>
+        <hr>
+        <div class="desc">Đăng nhập bằng tài khoản của bạn trên:</div>
+        
+        <!-- Khu vực hiển thị nút Google -->
+        <div class="google-btn-container">
+            <div id="g_id_onload"
+                 data-client_id="100491293776-r6tp3vgcrtl93eufhagqdfaie4u21t8b.apps.googleusercontent.com"
+                 data-callback="handleCredentialResponse"
+                 data-auto_prompt="false">
             </div>
-            
-            <p style="font-size: 12px; color: #e74c3c;">*Vui lòng nhập chính xác Gmail để hệ thống ghi nhận số Xu khi bạn nạp tiền qua QR.</p>
-        </div>
-
-        <!-- 2. MÀN HÌNH CHỌN MÔN HỌC -->
-        <div id="subject-screen" class="card hidden">
-            <h3 style="margin-top:0;">Chọn Môn Học Ôn Luyện</h3>
-            <div id="subject-list" class="grid-list"></div>
-        </div>
-
-        <!-- 3. MÀN HÌNH CHỌN BỘ ĐỀ -->
-        <div id="bode-screen" class="card hidden">
-            <button class="btn btn-danger" onclick="showScreen('subject-screen')" style="width: auto; padding: 5px 15px; margin-bottom: 15px;">← Quay lại chọn môn</button>
-            <h3 id="selected-subject-title" style="margin-top:0;">Danh Sách Bộ Đề</h3>
-            <div id="bode-list" class="grid-list"></div>
-        </div>
-
-        <!-- 4. MÀN HÌNH KHÓA NẠP TIỀN -->
-        <div id="payment-screen" class="card hidden">
-            <button class="btn btn-danger" onclick="showScreen('bode-screen')" style="width: auto; padding: 5px 15px; margin-bottom: 15px;">← Quay lại</button>
-            <div class="qr-box">
-                <h3 style="color: var(--accent-color); margin-top:0;">Bạn Đã Hết Lượt Làm Thử Free!</h3>
-                <p>Mỗi tài khoản chỉ có 1 lượt làm thử free. Vui lòng nạp xu để tiếp tục (5 Xu / 1 lượt làm):</p>
-
-                <div style="display: flex; gap: 10px; justify-content: center; margin: 15px 0; flex-wrap: wrap;">
-                    <button class="btn" onclick="updateQR(10000)" style="width: auto; padding: 10px 15px; font-size: 14px;">Gói Lẻ: 10.000đ (5 Xu)</button>
-                    <button class="btn btn-success" onclick="updateQR(50000)" style="width: auto; padding: 10px 15px; font-size: 14px;">Combo: 50.000đ (50 Xu)</button>
-                    <button class="btn" onclick="updateQR(250000)" style="width: auto; padding: 10px 15px; font-size: 14px; background-color: #e67e22;">Mua Đứt: 250.000đ</button>
-                </div>
-
-                <h4 style="margin: 10px 0; color: #333;">Số tiền nạp đã chọn: <span id="selected-amount" style="color: red; font-size: 20px;">10.000</span> VNĐ</h4>
-
-                <img class="qr-image" id="vietqr-img" src="" alt="Mã QR thanh toán">
-                <p style="background: #fff; padding: 10px; border: 1px solid #ddd; font-weight: bold; color: #333;">
-                    Nội dung CK bắt buộc: <span id="qr-content" style="color: blue;"></span>
-                </p>
+            <div class="g_id_signin"
+                 data-type="standard"
+                 data-size="large"
+                 data-theme="outline"
+                 data-text="sign_in_with"
+                 data-shape="rectangular"
+                 data-logo_alignment="left">
             </div>
         </div>
 
-        <!-- 5. MÀN HÌNH LÀM BÀI TRẮC NGHIỆM -->
-        <div id="quiz-screen" class="card hidden">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <h4 id="quiz-progress" style="margin:0; color:#666;">Câu 1/10</h4>
-            </div>
-            <h2 id="quiz-question" style="margin-top:0; font-size: 20px;">Nội dung câu hỏi?</h2>
-            <div id="quiz-options"></div>
-            <button id="next-btn" class="btn" style="margin-top: 20px; display:none;">Câu tiếp theo</button>
-        </div>
-
-        <!-- 6. MÀN HÌNH KẾT QUẢ -->
-        <div id="result-screen" class="card hidden" style="text-align: center;">
-            <h2>Kết Quả Làm Bài</h2>
-            <p id="result-text" style="font-size: 22px; font-weight: bold; color: var(--primary-color);"></p>
-            <button class="btn" onclick="showScreen('subject-screen')">Quay về trang chủ môn học</button>
+        <div class="footer">
+            Vietnamese (vi) ▾
         </div>
     </div>
 
     <script>
-        // Dán URL Deploy Web App mới của bạn vào giữa 2 dấu ngoặc kép bên dưới:
-        const API_URL = "THAY_BANG_LINK_DEPLOY_MOI_CUA_BAN";
-        
-        const BANK_ID = "TECHCOMBANK"; 
-        const ACCOUNT_NO = "19070205288014"; 
-        const ACCOUNT_NAME = "NGUYEN NHU QUYNH"; 
-
-        let currentUser = localStorage.getItem('quiz_google_user') || null;
-        let currentXu = 0;
-        let allQuestions = [];
-        let filteredQuestions = [];
-        let currentQIndex = 0;
-        let userScore = 0;
-        let currentBoDe = "";
-        let isAnswered = false;
-
-        document.addEventListener('keydown', function(e) {
-            if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'u' || e.key === 'a' || e.key === 's' || e.key === 'p')) {
-                e.preventDefault();
-                return false;
-            }
-            if (e.key === "F12" || (e.ctrlKey && e.shiftKey && e.key === "I")) {
-                e.preventDefault();
-                return false;
-            }
-        });
-
-        function showScreen(screenId) {
-            const screens = ['auth-screen', 'subject-screen', 'bode-screen', 'payment-screen', 'quiz-screen', 'result-screen'];
-            screens.forEach(id => {
-                const el = document.getElementById(id);
-                if(el) el.classList.add('hidden');
-            });
-            const targetEl = document.getElementById(screenId);
-            if(targetEl) targetEl.classList.remove('hidden');
-        }
-
-        function loadAllQuestions() {
-            fetch(API_URL + "?action=readQuestions")
-                .then(res => res.json())
-                .then(data => { 
-                    allQuestions = data; 
-                    if(currentUser) { renderSubjects(); }
-                })
-                .catch(err => console.error("Lỗi đồng bộ câu hỏi:", err));
-        }
-
-        function syncUserData(emailInput) {
-            return fetch(API_URL + "?action=googleAuth&email=" + encodeURIComponent(emailInput))
-                .then(res => res.json())
-                .then(res => {
-                    if(res.result === 'success') {
-                        currentUser = emailInput;
-                        currentXu = Number(res.xu) || 0;
-                        localStorage.setItem('quiz_google_user', emailInput);
-                        updateUserBar();
-                        return true;
-                    }
-                    return false;
-                });
-        }
-
-        function loginWithGoogleEmail() {
-            const emailInput = document.getElementById('google-email-input').value.trim().toLowerCase();
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        function handleCredentialResponse(response) {
+            const userData = parseJwt(response.credential);
+            alert("Đăng nhập thành công!\nXin chào: " + userData.name + "\nEmail: " + userData.email);
             
-            if(!emailInput || !emailRegex.test(emailInput)) {
-                return alert("Vui lòng nhập chính xác định dạng Email Google (Ví dụ: abc@gmail.com)!");
-            }
-
-            document.body.style.cursor = 'wait';
-
-            syncUserData(emailInput)
-                .then(success => {
-                    document.body.style.cursor = 'default';
-                    if(success) {
-                        renderSubjects();
-                        showScreen('subject-screen');
-                    } else {
-                        alert("Không thể kết nối máy chủ dữ liệu!");
-                    }
-                })
-                .catch(err => {
-                    document.body.style.cursor = 'default';
-                    alert("Lỗi kết nối máy chủ dữ liệu!");
-                });
+            // Lưu thông tin người dùng
+            localStorage.setItem("user_name", userData.name);
+            localStorage.setItem("user_email", userData.email);
         }
 
-        function logout() {
-            localStorage.clear();
-            currentUser = null;
-            currentXu = 0;
-            updateUserBar();
-            showScreen('auth-screen');
+        function parseJwt(token) {
+            var base64Url = token.split('.')[1];
+            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
         }
-
-        function updateUserBar() {
-            if(currentUser) {
-                document.getElementById('user-display').innerText = "Tài khoản: " + currentUser;
-                document.getElementById('xu-display').innerText = "Xu: " + currentXu;
-                document.getElementById('logout-btn').classList.remove('hidden');
-            } else {
-                document.getElementById('user-display').innerText = "Chưa đăng nhập";
-                document.getElementById('xu-display').innerText = "Xu: 0";
-                document.getElementById('logout-btn').classList.add('hidden');
-            }
-        }
-
-        function renderSubjects() {
-            const listContainer = document.getElementById('subject-list');
-            listContainer.innerHTML = "";
-            if (!allQuestions || allQuestions.length === 0) {
-                listContainer.innerHTML = "Đang kết nối dữ liệu câu hỏi...";
-                return;
-            }
-            const uniqueSubjects = [...new Set(allQuestions.map(item => item.mon))];
-            uniqueSubjects.forEach(mon => {
-                if(!mon) return;
-                const div = document.createElement('div');
-                div.className = 'grid-item';
-                div.innerText = mon;
-                div.onclick = () => renderBoDe(mon);
-                listContainer.appendChild(div);
-            });
-        }
-
-        function renderBoDe(subjectName) {
-            document.getElementById('selected-subject-title').innerText = "Bộ Đề Môn: " + subjectName;
-            const listContainer = document.getElementById('bode-list');
-            listContainer.innerHTML = "";
-            const subQuestions = allQuestions.filter(q => q.mon === subjectName);
-            const uniqueBoDe = [...new Set(subQuestions.map(item => item.bode))];
-            uniqueBoDe.forEach(bode => {
-                if(!bode) return;
-                const div = document.createElement('div');
-                div.className = 'grid-item';
-                div.innerText = bode.replace(/_/g, ' ');
-                div.onclick = () => selectBoDe(bode);
-                listContainer.appendChild(div);
-            });
-            showScreen('bode-screen');
-        }
-
-        let currentSelectedAmount = 10000;
-
-        function updateQR(amount) {
-            currentSelectedAmount = amount;
-            document.getElementById('selected-amount').innerText = amount.toLocaleString('vi-VN');
-            const qrUrl = "https://img.vietqr.io/image/" + BANK_ID + "-" + ACCOUNT_NO + "-compact2.png?amount=" + currentSelectedAmount + "&addInfo=NAPXU%20" + encodeURIComponent(currentUser) + "&accountName=" + encodeURIComponent(ACCOUNT_NAME);
-            document.getElementById('vietqr-img').src = qrUrl;
-        }
-
-        function selectBoDe(bodeName) {
-            currentBoDe = bodeName;
-            document.body.style.cursor = 'wait';
-
-            // Gọi qua GET để tránh lỗi CORS hoàn toàn
-            const checkUrl = API_URL + "?action=checkAndDeduct&username=" + encodeURIComponent(currentUser) + "&bode=" + encodeURIComponent(currentBoDe);
-
-            fetch(checkUrl)
-            .then(res => res.json())
-            .then(res => {
-                document.body.style.cursor = 'default';
-                if (res.status === "allow") {
-                    if (res.message) alert(res.message);
-                    if (res.newXu !== undefined) {
-                        currentXu = res.newXu;
-                        updateUserBar();
-                    }
-                    startQuiz(bodeName);
-                } else {
-                    document.getElementById('qr-content').innerText = "NAPXU " + currentUser;
-                    updateQR(10000); 
-                    showScreen('payment-screen');
-                }
-            })
-            .catch(err => {
-                document.body.style.cursor = 'default';
-                console.error("Lỗi kiểm tra Xu:", err);
-                document.getElementById('qr-content').innerText = "NAPXU " + currentUser;
-                updateQR(10000);
-                showScreen('payment-screen');
-            });
-        }
-
-        function shuffle(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        }
-
-        function startQuiz(bodeName) {
-            let baseQuestions = allQuestions.filter(q => q.bode === bodeName);
-            filteredQuestions = shuffle([...baseQuestions]).slice(0, 50);
-            currentQIndex = 0;
-            userScore = 0;
-            showScreen('quiz-screen');
-            loadQuestion();
-        }
-
-        function loadQuestion() {
-            isAnswered = false;
-            document.getElementById('next-btn').style.display = 'none';
-            let currentQ = filteredQuestions[currentQIndex];
-            document.getElementById('quiz-progress').innerText = "Câu " + (currentQIndex + 1) + "/" + filteredQuestions.length;
-            document.getElementById('quiz-question').innerText = currentQ.q;
-            const optionsBox = document.getElementById('quiz-options');
-            optionsBox.innerHTML = "";
-            const labels = ['A', 'B', 'C', 'D'];
-            currentQ.a.forEach((ans, index) => {
-                const div = document.createElement('div');
-                div.className = 'option-item';
-                div.innerText = labels[index] + ". " + ans;
-                div.onclick = () => checkUserAnswer(div, labels[index], currentQ.correct);
-                optionsBox.appendChild(div);
-            });
-        }
-
-        function checkUserAnswer(element, selectedLetter, correctLetter) {
-            if(isAnswered) return;
-            isAnswered = true;
-            const options = document.querySelectorAll('.option-item');
-            const labels = ['A', 'B', 'C', 'D'];
-            let correctIndex = labels.indexOf(correctLetter);
-            
-            if(selectedLetter === correctLetter) {
-                element.classList.add('correct');
-                userScore++;
-            } else {
-                element.classList.add('wrong');
-                if(correctIndex !== -1) {
-                    options[correctIndex].classList.add('correct');
-                }
-            }
-            document.getElementById('next-btn').style.display = 'block';
-        }
-
-        document.getElementById('next-btn').onclick = function() {
-            currentQIndex++;
-            if(currentQIndex < filteredQuestions.length) {
-                loadQuestion();
-            } else {
-                document.getElementById('result-text').innerText = "Bạn làm đúng " + userScore + " / " + filteredQuestions.length + " câu!";
-                showScreen('result-screen');
-            }
-        };
-
-        if(currentUser) {
-            syncUserData(currentUser).then(() => {
-                showScreen('subject-screen');
-            });
-        } else {
-            showScreen('auth-screen');
-        }
-        loadAllQuestions();
     </script>
+
 </body>
 </html>
